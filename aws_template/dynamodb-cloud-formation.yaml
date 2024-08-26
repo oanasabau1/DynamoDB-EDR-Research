@@ -1,0 +1,158 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: DynamoDB EDR data cloud formation template
+
+Parameters:
+  EventRCU:
+    Description: Read Capacity Units
+    Type: Number
+    Default: 20
+  EventWCU:
+    Description: Write Capacity Units
+    Type: Number
+    Default: 20
+  EventTableName:
+    Description: Name of the table storing the Events
+    Type: String
+    Default: "valentin-edr-events"
+  IncidentRCU:
+    Description: Read Capacity Units
+    Type: Number
+    Default: 20
+  IncidentWCU:
+    Description: Write Capacity Units
+    Type: Number
+    Default: 20
+  IncidentTableName:
+    Description: Name of the table storing the Incidents
+    Type: String
+    Default: "valentin-edr-incidents"
+
+Resources:
+  EventsDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "timestamp"
+          AttributeType: "S"
+        - AttributeName: "vehicle_id"
+          AttributeType: "S"
+        - AttributeName: "event_id"
+          AttributeType: "S"
+        - AttributeName: "vehicle_speed"
+          AttributeType: "N"
+        # - AttributeName: "event_type"
+        #   AttributeType: "S"
+        # - AttributeName: "acceleration"
+        #   AttributeType: "S"
+        # - AttributeName: "location"
+        #   AttributeType: "S"
+        # - AttributeName: "fuel_level"
+        #   AttributeType: "N"
+        # - AttributeName: "engine_rpm"
+        #   AttributeType: "N"
+        # - AttributeName: "throttle_position"
+        #   AttributeType: "N"
+        # - AttributeName: "brake_status"
+        #   AttributeType: "S"
+        # - AttributeName: "seatbelt_status"
+        #   AttributeType: "S"
+        # - AttributeName: "airbag_deployed"
+        #   AttributeType: "S"
+        # - AttributeName: "error_codes"
+        #   AttributeType: "S"
+      KeySchema:
+        - AttributeName: "vehicle_id"
+          KeyType: "HASH" # Partition key
+        - AttributeName: "event_id"
+          KeyType: "RANGE" # Sort key
+      LocalSecondaryIndexes:
+        - IndexName: "timestamp_index"
+          KeySchema:
+            - AttributeName: "vehicle_id"
+              KeyType: "HASH"
+            - AttributeName: "timestamp"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: ALL
+        - IndexName: "vehicle_speed_index"
+          KeySchema:
+            - AttributeName: "vehicle_id"
+              KeyType: "HASH"
+            - AttributeName: "vehicle_speed"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: ALL
+      ProvisionedThroughput:
+        ReadCapacityUnits: !Ref EventRCU
+        WriteCapacityUnits: !Ref EventWCU
+      TableName: !Ref EventTableName
+      Tags:
+        - Key: Name
+          Value: "valentin-edr-events-cf"
+  IncidentsDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "timestamp"
+          AttributeType: "S"
+        # - AttributeName: "vehicle_id" #* Removed due to redundancy
+        #   AttributeType: "S"
+        - AttributeName: "event_id"
+          AttributeType: "S"
+        # - AttributeName: "radar_id"
+        #   AttributeType: "S"
+        - AttributeName: "incident_id"
+          AttributeType: "S"
+        # - AttributeName: "distance"
+        #   AttributeType: "N"
+        # - AttributeName: "velocity"
+        #   AttributeType: "N"
+        # - AttributeName: "azimuth_angle"
+        #   AttributeType: "N"
+        # - AttributeName: "elevation_angle"
+        #   AttributeType: "N"
+        - AttributeName: "object_type"
+          AttributeType: "S"
+        # - AttributeName: "object_size"
+        #   AttributeType: "S"
+        # - AttributeName: "object_class"
+        #   AttributeType: "S"
+        - AttributeName: "confidence_level"
+          AttributeType: "N"
+      KeySchema:
+        - AttributeName: "event_id"
+          KeyType: "HASH" # Partition key
+        - AttributeName: "incident_id"
+          KeyType: "RANGE" # Sort key
+      LocalSecondaryIndexes:
+        - IndexName: "confidence_level_index"
+          KeySchema:
+            - AttributeName: "event_id"
+              KeyType: "HASH"
+            - AttributeName: "confidence_level"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: ALL
+        - IndexName: "timestamp_index"
+          KeySchema:
+            - AttributeName: "event_id"
+              KeyType: "HASH"
+            - AttributeName: "timestamp"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: ALL
+        - IndexName: "object_type_index"
+          KeySchema:
+            - AttributeName: "event_id"
+              KeyType: "HASH"
+            - AttributeName: "object_type"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: ALL
+      ProvisionedThroughput:
+        ReadCapacityUnits: !Ref IncidentRCU
+        WriteCapacityUnits: !Ref IncidentWCU
+      TableName: !Ref IncidentTableName
+      Tags:
+        - Key: Name
+          Value: "valentin-edr-incidents-cf"
